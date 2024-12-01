@@ -1,6 +1,7 @@
 CREATE TYPE user_status AS ENUM ('active', 'inactive');
 CREATE TYPE content_type_enum AS ENUM ('movie', 'series');
 CREATE TYPE user_level_enum AS ENUM ('Free', 'Standard', 'Pro');
+CREATE TYPE duration_enum AS ENUM ('6', '12'); 
 
 CREATE TABLE Country (
     country_id SERIAL PRIMARY KEY,
@@ -21,7 +22,7 @@ CREATE TABLE Users (
     ),
     status user_status DEFAULT 'active',
     country_id INT NOT NULL,
-    FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE SET NULL
+    FOREIGN KEY (country_id) REFERENCES Country(country_id) ON DELETE SET NULL
 );
 
 CREATE TABLE Content (
@@ -29,8 +30,9 @@ CREATE TABLE Content (
     title VARCHAR(255) NOT NULL,
     release_date DATE,
     director VARCHAR(100),
-    rating DECIMAL(3, 1) CHECK (rating BETWEEN 0 AND 10),
-    content_type content_type_enum NOT NULL
+    rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5), 
+    content_type content_type_enum NOT NULL,
+    access_level INT CHECK (access_level BETWEEN 1 AND 3) DEFAULT 1 
 );
 
 CREATE TABLE Episode (
@@ -41,7 +43,6 @@ CREATE TABLE Episode (
     PRIMARY KEY (content_id, episode_no),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE
 );
-
 
 CREATE TABLE Genre (
     genre_id SERIAL PRIMARY KEY,
@@ -58,8 +59,8 @@ CREATE TABLE Subscription_pack (
     pack_id SERIAL PRIMARY KEY,
     pack_name VARCHAR(255) NOT NULL,
     price DECIMAL(8, 2) NOT NULL,
-	duration INT CHECK (duration > 0),
-    access_level INT CHECK (access_level BETWEEN 1 AND 3)
+    duration duration_enum NOT NULL, 
+    access_level INT CHECK (access_level BETWEEN 1 AND 3) 
 );
 
 CREATE TABLE View_history (
@@ -79,18 +80,19 @@ CREATE TABLE Subscription (
     user_id INT NOT NULL,
     pack_id INT NOT NULL,
     start_time DATE NOT NULL,
-    end_time DATE NOT NULL,
+    end_time DATE DEFAULT 'infinity', 
     PRIMARY KEY (user_id, start_time, pack_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES Subscription_pack(pack_id) ON DELETE CASCADE,
     CHECK (end_time > start_time)
 );
 
+
 CREATE TABLE Rate (
     content_id INT NOT NULL,
     user_id INT NOT NULL,
     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    rating DECIMAL(3, 1) CHECK (rating BETWEEN 0 AND 10) NOT NULL,
+    rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5) NOT NULL,
     PRIMARY KEY (content_id, user_id),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
@@ -140,6 +142,7 @@ CREATE TABLE Country_language (
     FOREIGN KEY (country_id) REFERENCES Country(country_id) ON DELETE CASCADE,
     FOREIGN KEY (language_id) REFERENCES Language(language_id) ON DELETE CASCADE
 );
+
 
 
 
