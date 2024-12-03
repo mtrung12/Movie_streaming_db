@@ -39,10 +39,11 @@ CREATE TABLE Episode (
     content_id INT NOT NULL,
     episode_no INT NOT NULL,
     title VARCHAR(255) NOT NULL,
-    duration INT NOT NULL CHECK (duration > 0),
+    duration TIME NOT NULL,
     PRIMARY KEY (content_id, episode_no),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE Genre (
     genre_id SERIAL PRIMARY KEY,
