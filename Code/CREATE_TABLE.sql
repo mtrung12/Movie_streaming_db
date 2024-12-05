@@ -1,7 +1,7 @@
 CREATE TYPE user_status AS ENUM ('active', 'inactive');
 CREATE TYPE content_type_enum AS ENUM ('movie', 'series');
 CREATE TYPE user_level_enum AS ENUM ('Free', 'Standard', 'Pro');
-CREATE TYPE duration_enum AS ENUM ('6', '12'); 
+CREATE TYPE duration_enum AS ENUM ('6', '12', 'infinity'); 
 
 CREATE TABLE Country (
     country_id SERIAL PRIMARY KEY,
@@ -30,7 +30,7 @@ CREATE TABLE Content (
     title VARCHAR(255) NOT NULL,
     release_date DATE,
     director VARCHAR(100),
-    rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5), 
+    rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5),
     content_type content_type_enum NOT NULL,
     access_level INT CHECK (access_level BETWEEN 1 AND 3) DEFAULT 1 
 );
@@ -71,11 +71,11 @@ CREATE TABLE View_history (
     view_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     check_point TIME NOT NULL,
     is_finished BOOLEAN DEFAULT FALSE NOT NULL,
-    PRIMARY KEY (user_id, content_id, episode_no),
+    PRIMARY KEY (user_id, content_id, episode_no, view_time),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (content_id, episode_no) REFERENCES Episode(content_id, episode_no) ON DELETE CASCADE
-
 );
+
 
 CREATE TABLE Subscription (
     user_id INT NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE Rate (
     content_id INT NOT NULL,
     user_id INT NOT NULL,
     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5) NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5) NOT NULL,
     PRIMARY KEY (content_id, user_id),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
