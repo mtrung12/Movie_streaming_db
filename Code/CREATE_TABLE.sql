@@ -1,3 +1,4 @@
+
 CREATE TYPE user_status AS ENUM ('active', 'inactive');
 CREATE TYPE content_type_enum AS ENUM ('movie', 'series');
 CREATE TYPE user_level_enum AS ENUM ('Free', 'Standard', 'Pro');
@@ -145,14 +146,3 @@ CREATE TABLE Country_language (
     FOREIGN KEY (country_id) REFERENCES Country(country_id) ON DELETE CASCADE,
     FOREIGN KEY (language_id) REFERENCES Language(language_id) ON DELETE CASCADE
 );
-
-
-
-
-
-
-
-
-
-
-

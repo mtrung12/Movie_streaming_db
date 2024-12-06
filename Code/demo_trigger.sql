@@ -1,29 +1,60 @@
-INSERT INTO Country (country_name) VALUES ('USA'), ('UK'), ('India');
-INSERT INTO Users (first_name, last_name, email, password, country_id) 
-VALUES 
-('John', 'Doe', 'john.doe@example.com', 'Password@123', 1),
-('Jane', 'Smith', 'jane.smith@example.com', 'Strong#Pass1', 2),
-('Raj', 'Kumar', 'raj.kumar@example.com', 'Secure$789', 3);
-INSERT INTO Content (title, release_date, director, content_type, access_level) 
-VALUES 
-('Movie A', '2023-01-01', 'Director A', 'movie', 1),
-('Series B', '2022-05-15', 'Director B', 'series', 2),
-('Movie C', '2024-03-10', 'Director C', 'movie', 3);
--- Insert initial ratings
-INSERT INTO Rate (content_id, user_id, rating) 
-VALUES 
-(1, 1, 4.0),
-(1, 2, 5.0),
-(2, 1, 3.5);
+-- Clear demo --
+DELETE FROM Users
+WHERE email IN (
+    'john.doe@example.com', 
+    'jane.smith@example.com', 
+    'raj.kumar@example.com'
+);
 
--- Add another rating for Content 1 to see if the average updates
-INSERT INTO Rate (content_id, user_id, rating) 
+-- Insert new users --
+INSERT INTO Users (user_id, first_name, last_name, email, password, country_id) 
 VALUES 
-(1, 3, 3.0);
+(1, 'John', 'Doe', 'john.doe@example.com', 'Password@123', 1),
+(2, 'Jane', 'Smith', 'jane.smith@example.com', 'Strong#Pass1', 2),
+(3, 'Raj', 'Kumar', 'raj.kumar@example.com', 'Secure$789', 3);
 
--- Check the updated rating in the Content table
-SELECT content_id, title, rating 
-FROM Content;
+--Check trigger new_user_pack--
+SELECT * FROM subscription
+WHERE user_id BETWEEN 1 AND 3;
+
+--Add subscription pack 1,2,4 (access_level=1,2,3) for user_id 1,2,3 respectively 
+INSERT INTO subscription(user_id, pack_id, start_time, end_time)
+VALUES(2, 2, CURRENT_DATE, CURRENT_DATE+2), 
+		(3, 4, CURRENT_DATE-3, CURRENT_DATE-1)
 
 
+-- Check trigger overlapping subscription --
+--This will raise EXCEPTION <-- pack 3 have access_level = 2 equal to pack 2
+INSERT INTO subscription(user_id, pack_id, start_time, end_time)
+VALUES(2, 3, CURRENT_DATE, CURRENT_DATE+2);
+		
+--This will NOT raise EXCEPTION <-- pack 4 have access_level = 3 > pack 3 but it expired 
+INSERT INTO subscription(user_id, pack_id, start_time, end_time)
+VALUES(3, 3, CURRENT_DATE, CURRENT_DATE+2);
+
+--content_id in (111,112,116) --> access level (1, 2, 3)
+--current access level of user_id(1, 2, 3) is (1, 2, 2)\
+--Demo trigger: manage access level
+--This will raise an EXCEPTION
+INSERT INTO View_history
+VALUES(1,112,1,CURRENT_TIMESTAMP,'00:00:01', FALSE);
+--These will NOT raise an EXCEPTION
+INSERT INTO View_history
+VALUES(1,111,1,CURRENT_TIMESTAMP,'00:00:01', FALSE);
+
+INSERT INTO View_history
+VALUES(2,112,1,CURRENT_TIMESTAMP,'00:00:01', TRUE);
+
+--Check trigger: manage rating
+--This will raise exception because user ID 1 haven't finished movies 111
+INSERT INTO rate
+VALUES(111,1,CURRENT_TIMESTAMP, 4.0);
+--This will NOT raise exception because user ID 2 haven finished movies 112
+INSERT INTO rate
+VALUES(112,2,CURRENT_TIMESTAMP, 4.0)
+
+
+--Check trigger: AVG rating
+SELECT * FROM content
+WHERE content_id=112;
 
