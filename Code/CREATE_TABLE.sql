@@ -30,9 +30,7 @@ CREATE TABLE Content (
     title VARCHAR(255) NOT NULL,
     release_date DATE,
     director VARCHAR(100),
-
     rating DECIMAL(3, 1) CHECK (rating BETWEEN 1 AND 5),
-
     content_type content_type_enum NOT NULL,
     access_level INT CHECK (access_level BETWEEN 1 AND 3) DEFAULT 1 
 );
@@ -81,7 +79,7 @@ CREATE TABLE View_history (
 
 CREATE TABLE Subscription (
     user_id INT NOT NULL,
-    pack_id INT NOT NULL,
+    pack_id INT NOT NULL DEFAULT 1,
     start_time DATE NOT NULL,
     end_time DATE DEFAULT 'infinity', 
     PRIMARY KEY (user_id, start_time, pack_id),
