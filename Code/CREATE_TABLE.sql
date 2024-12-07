@@ -83,8 +83,8 @@ CREATE TABLE View_history (
 CREATE TABLE Subscription (
     user_id INT NOT NULL,
     pack_id INT NOT NULL,
-    start_time DATE NOT NULL,
-    end_time DATE DEFAULT 'infinity', 
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP DEFAULT 'infinity',
     PRIMARY KEY (user_id, start_time, pack_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES Subscription_pack(pack_id) ON DELETE CASCADE,
@@ -97,7 +97,7 @@ CREATE TABLE Rate (
     user_id INT NOT NULL,
     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     rating INT CHECK (rating BETWEEN 1 AND 5) NOT NULL,
-    PRIMARY KEY (content_id, user_id, time),
+    PRIMARY KEY (content_id, user_id),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
