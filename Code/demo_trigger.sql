@@ -19,9 +19,10 @@ WHERE user_id BETWEEN 1 AND 3;
 
 --Add subscription pack 1,2,4 (access_level=1,2,3) for user_id 1,2,3 respectively 
 INSERT INTO subscription(user_id, pack_id, start_time, end_time)
-VALUES(2, 2, CURRENT_DATE, CURRENT_DATE+2), 
-		(3, 4, CURRENT_DATE-3, CURRENT_DATE-1)
-
+VALUES(2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP+INTERVAL '2 days'), 
+		(3, 4, CURRENT_TIMESTAMP-INTERVAL '3 days', CURRENT_TIMESTAMP-INTERVAL '1 day');
+SELECT * FROM subscription
+WHERE user_id BETWEEN 1 AND 3;
 
 -- Check trigger overlapping subscription --
 --This will raise EXCEPTION <-- pack 3 have access_level = 2 equal to pack 2
@@ -31,6 +32,10 @@ VALUES(2, 3, CURRENT_DATE, CURRENT_DATE+2);
 --This will NOT raise EXCEPTION <-- pack 4 have access_level = 3 > pack 3 but it expired 
 INSERT INTO subscription(user_id, pack_id, start_time, end_time)
 VALUES(3, 3, CURRENT_DATE, CURRENT_DATE+2);
+
+--RUN thí to check trigger deactive_old_pack
+SELECT * FROM subscription
+WHERE user_id = 3;
 
 --content_id in (111,112,116) --> access level (1, 2, 3)
 --current access level of user_id(1, 2, 3) is (1, 2, 2)\
@@ -62,4 +67,3 @@ WHERE content_id=112;
 --Run Check trigger: AVG rating after to observe the result of this
 INSERT INTO rate
 VALUES(112,2,CURRENT_TIMESTAMP, 3.0)
-

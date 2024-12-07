@@ -148,3 +148,22 @@ BEFORE INSERT ON Rate
 FOR EACH ROW
 EXECUTE FUNCTION delete_old_rating();
 
+
+--TRIGGER 7--
+CREATE OR REPLACE FUNCTION deactive_old_pack()
+RETURNS TRIGGER AS $$
+BEGIN 
+	UPDATE Subscription
+	SET end_time = CURRENT_TIMESTAMP + INTERVAL '1 second'
+	WHERE user_id = NEW.user_id
+	AND end_time >= CURRENT_TIMESTAMP
+	AND pack_id != 1
+	AND pack_id != NEW.pack_id;
+	RETURN NEW;
+END;
+$$LANGUAGE plpgsql;
+--Create trigger
+CREATE TRIGGER deactive_old_pack
+AFTER INSERT ON Subscription
+FOR EACH ROW
+EXECUTE FUNCTION deactive_old_pack();
