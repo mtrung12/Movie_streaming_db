@@ -1,0 +1,6 @@
+pack_id,pack_name,price,duration,access_level
+1,Free Plan,0,infinity,1
+2,Standard Plan,14.99,6,2
+3,Standard Plan,24.99,12,2
+4,Premium Plan,29.99,6,3
+5,Premium Plan,49.99,12,3

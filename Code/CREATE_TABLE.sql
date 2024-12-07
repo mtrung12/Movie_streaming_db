@@ -97,10 +97,11 @@ CREATE TABLE Rate (
     user_id INT NOT NULL,
     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     rating INT CHECK (rating BETWEEN 1 AND 5) NOT NULL,
-    PRIMARY KEY (content_id, user_id),
+    PRIMARY KEY (content_id, user_id, time),
     FOREIGN KEY (content_id) REFERENCES Content(content_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE Favourite_list (
     content_id INT NOT NULL,
