@@ -38,7 +38,7 @@ BEGIN
         JOIN Subscription_pack AS sp ON s.pack_id = sp.pack_id
         WHERE 
             s.user_id = NEW.user_id
-            AND s.end_time >= CURRENT_DATE  -- Active subscription
+            AND s.end_time >= CURRENT_TIMESTAMP  -- Active subscription
             AND sp.access_level >= (
                 SELECT access_level 
                 FROM Subscription_pack 
@@ -128,4 +128,23 @@ CREATE TRIGGER trigger_check_user_access
 BEFORE INSERT ON View_history
 FOR EACH ROW
 EXECUTE FUNCTION check_user_access();
+
+--TRIGGER 6--
+-- Delete old rating from the same user for the same content
+CREATE OR REPLACE FUNCTION delete_old_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM Rate
+    WHERE user_id = NEW.user_id
+      AND content_id = NEW.content_id;
+
+    -- Allow the new rating to be inserted
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--Create trigger--
+CREATE TRIGGER before_rate_insert
+BEFORE INSERT ON Rate
+FOR EACH ROW
+EXECUTE FUNCTION delete_old_rating();
 

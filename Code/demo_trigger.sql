@@ -58,3 +58,8 @@ VALUES(112,2,CURRENT_TIMESTAMP, 4.0)
 SELECT * FROM content
 WHERE content_id=112;
 
+--Check trigger: delete old rating
+--Run Check trigger: AVG rating after to observe the result of this
+INSERT INTO rate
+VALUES(112,2,CURRENT_TIMESTAMP, 3.0)
+
