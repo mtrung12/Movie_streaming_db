@@ -97,39 +97,7 @@ FROM
 LEFT JOIN 
     Country c ON u.country_id = c.country_id;
 
--- Content Overview View
-CREATE VIEW ContentOverview AS
-SELECT 
-    c.content_id,
-    c.title,
-    c.release_date,
-    c.director,
-    c.rating,
-    c.content_type,
-    COUNT(e.episode_no) AS total_episodes
-FROM 
-    Content c
-LEFT JOIN 
-    Episode e ON c.content_id = e.content_id
-GROUP BY 
-    c.content_id;
 
-
--- User Activity Logs View
-CREATE VIEW UserActivityLogs AS
-SELECT 
-    vh.user_id,
-    CONCAT(u.first_name, ' ', u.last_name) AS full_name,
-    c.title AS content_title,
-    vh.view_time,
-    vh.check_point,
-    vh.is_finished
-FROM 
-    View_history vh
-JOIN 
-    Users u ON vh.user_id = u.user_id
-JOIN 
-    Content c ON vh.content_id = c.content_id;
 
 -- Top Rated Content View
 CREATE VIEW TopRatedContent AS
