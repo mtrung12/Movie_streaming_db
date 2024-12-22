@@ -15,6 +15,18 @@ CREATE INDEX IF NOT EXISTS idx_genre_id
 	ON genre USING btree (genre_id);
 CREATE INDEX idx_subscription_active 
 	ON subscription USING btree (user_id) WHERE end_time = 'infinity';
+
+CREATE EXTENSION pg_trgm;
+
+CREATE INDEX idx_casts_first_name 
+	ON casts USING gin (lower(first_name) gin_trgm_ops);
+CREATE INDEX idx_casts_last_name 
+	ON casts USING gin (lower(last_name) gin_trgm_ops);
+CREATE INDEX idx_content_title 
+	ON content USING gin (lower(title) gin_trgm_ops);
+CREATE INDEX idx_genre_name 
+	ON genre USING gin (lower(genre_name) gin_trgm_ops);
+
 --*/
 /*
 DROP INDEX IF EXISTS idx_view_history_user_time;
@@ -25,4 +37,8 @@ DROP INDEX IF EXISTS idx_content_id;
 DROP INDEX IF EXISTS idx_content_rating;
 DROP INDEX IF EXISTS idx_genre_id;
 DROP INDEX IF EXISTS idx_subscription_active;
+DROP INDEX IF EXISTS idx_casts_first_name;
+DROP INDEX IF EXISTS idx_casts_last_name;
+DROP INDEX IF EXISTS idx_content_title;
+DROP INDEX IF EXISTS idx_genre_name;
 */

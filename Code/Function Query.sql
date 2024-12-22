@@ -155,66 +155,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-/*CREATE OR REPLACE FUNCTION recommend_content_by_similarity(user_id_input INTEGER)
+CREATE OR REPLACE FUNCTION search_content_by_keyword(search_keyword TEXT)
 RETURNS TABLE (
-    recommended_content_id INTEGER,
+    content_id INT,
     title VARCHAR,
-    genre_name VARCHAR,
-    rating DECIMAL(3, 1)
+    genre_names VARCHAR,
+    cast_names VARCHAR,
+    rating DECIMAL,
+    view_count INT
 ) AS $$
 BEGIN
     RETURN QUERY
-    WITH user_similarity AS (
-        -- Calculate Pearson correlation between target user and other users
-        SELECT 
-            r1.user_id AS similar_user_id,
-            SUM((r1.rating - avg_r1.avg_rating) * (r2.rating - avg_r2.avg_rating)) /
-            (SQRT(SUM(POWER(r1.rating - avg_r1.avg_rating, 2))) * SQRT(SUM(POWER(r2.rating - avg_r2.avg_rating, 2)))) AS similarity_score
-        FROM 
-            rate r1
-        INNER JOIN rate r2 ON r1.content_id = r2.content_id AND r1.user_id <> r2.user_id
-        CROSS JOIN (
-            SELECT user_id, AVG(rating) AS avg_rating FROM rate GROUP BY user_id
-        ) avg_r1
-        CROSS JOIN (
-            SELECT user_id, AVG(rating) AS avg_rating FROM rate GROUP BY user_id
-        ) avg_r2
-        WHERE 
-            r1.user_id = user_id_input AND avg_r1.user_id = r1.user_id AND avg_r2.user_id = r2.user_id
-        GROUP BY r1.user_id, r2.user_id
-        ORDER BY similarity_score DESC
-        LIMIT 5 -- Limit to top 5 similar users
-    ),
-    similar_users_content AS (
-        -- Get content rated highly by similar users
-        SELECT 
-            r.content_id,
-            AVG(r.rating) AS avg_rating
-        FROM 
-            rate r
-        INNER JOIN user_similarity us ON r.user_id = us.similar_user_id
-        WHERE 
-            r.rating >= 4 -- Only consider highly rated content
-        GROUP BY r.content_id
-        ORDER BY avg_rating DESC
-    )
     SELECT 
-        c.content_id AS recommended_content_id,
+        c.content_id, 
         c.title,
-        g.genre_name,
-        c.rating
+        STRING_AGG(DISTINCT g.genre_name, ', ')::VARCHAR AS genre_names,
+        STRING_AGG(DISTINCT CONCAT(cs.first_name, ' ', cs.last_name), ', ')::VARCHAR AS cast_names,
+        c.rating,
+        COALESCE(COUNT(vh.content_id), 0)::INT AS view_count  -- Explicitly cast COUNT to INT
     FROM 
-        similar_users_content suc
-    INNER JOIN content c ON suc.content_id = c.content_id
-    INNER JOIN content_genre cg ON c.content_id = cg.content_id
-    INNER JOIN genre g ON cg.genre_id = g.genre_id
+        content c
+    LEFT JOIN 
+        content_genre cg ON c.content_id = cg.content_id
+    LEFT JOIN 
+        genre g ON cg.genre_id = g.genre_id
+    LEFT JOIN 
+        content_cast cc ON c.content_id = cc.content_id
+    LEFT JOIN 
+        casts cs ON cc.cast_id = cs.cast_id
+    LEFT JOIN 
+        view_history vh ON c.content_id = vh.content_id AND vh.is_finished = TRUE  -- Join view_history with condition on is_finished
     WHERE 
-        c.content_id NOT IN (
-            SELECT vh.content_id FROM view_history vh WHERE vh.user_id = user_id_input
-        ) -- Exclude already watched content
+        LOWER(c.title) LIKE LOWER('%' || search_keyword || '%')
+        OR LOWER(cs.first_name) LIKE LOWER('%' || search_keyword || '%')
+        OR LOWER(cs.last_name) LIKE LOWER('%' || search_keyword || '%')
+        OR LOWER(g.genre_name) LIKE LOWER('%' || search_keyword || '%')
+    GROUP BY 
+        c.content_id, c.title, c.rating
     ORDER BY 
-        suc.avg_rating DESC, -- Prioritize highest-rated content
-        c.rating DESC; -- Prioritize overall rating
+        view_count DESC,
+        c.rating DESC NULLS LAST;
 END;
-$$ LANGUAGE plpgsql;*/
+$$ LANGUAGE plpgsql;

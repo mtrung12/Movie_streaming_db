@@ -163,3 +163,8 @@ ORDER BY COUNT(vh.content_id) DESC, c.rating DESC;
 
 SELECT * FROM recommend_content_by_location(680);
 -- ============================
+
+-- ============================
+-- 11. Search content by keyword function
+-- ============================
+SELECT * FROM search_content_by_keyword('the');
