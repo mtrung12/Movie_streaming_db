@@ -32,7 +32,7 @@ EXECUTE FUNCTION update_content_rating();
 CREATE OR REPLACE FUNCTION check_subscription_overlap()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (
+    IF NEW.pack_id != 1 AND EXISTS (
         SELECT 1
         FROM Subscription AS s
         JOIN Subscription_pack AS sp ON s.pack_id = sp.pack_id

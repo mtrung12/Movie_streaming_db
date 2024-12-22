@@ -1,12 +1,30 @@
 -- ============================
 -- 1. DELETE Users
 -- ============================
-DELETE FROM Users
+SELECT *
+FROM Users
 WHERE email IN (
-    'john.doe1@example.com', 
-    'jane.smith1@example.com', 
+    'sebastian.allen@example.com', 
+    'amelia.taylor@example.com', 
     'raj.kumar@example.com'
 );
+
+DELETE FROM Users
+WHERE email IN (
+    'sebastian.allen@example.com', 
+    'amelia.taylor@example.com', 
+    'raj.kumar@example.com'
+);
+
+SELECT *
+FROM Users
+WHERE email IN (
+    'sebastian.allen@example.com', 
+    'amelia.taylor@example.com', 
+    'raj.kumar@example.com'
+);
+
+S
 
 -- This should delete the first 2 users along with their corresponding records in rate, subscription, and favourite_list
 -- ============================
@@ -16,8 +34,8 @@ WHERE email IN (
 -- ============================
 INSERT INTO Users (first_name, last_name, email, password, country_id) 
 VALUES 
-    ('John', 'Doe', 'john.doe@example.com', 'Password@123', 1),
-    ('Jane', 'Smith', 'jane.smith@example.com', 'Strong#Pass1', 2),
+    ('Sebastian', 'Allen', 'sebastian.allen@example.com', 'Password@123', 1),
+    ('Amelia', 'Taylor', 'amelia.taylor@example.com', 'Strong#Pass1', 2),
     ('Raj', 'Kumar', 'raj.kumar@example.com', 'Secure$789', 3);
 
 -- Display all users ordered by user_id
@@ -39,12 +57,15 @@ SELECT subscribe_to_pack(1, 1);  -- Should raise exception (user at level 1 cann
 
 -- Subscribe user 2 to level 2 pack
 SELECT subscribe_to_pack(2, 2);
+SELECT *
+FROM Subscription
+WHERE user_id = 2;
 
 -- Subscribe user 3 to level 4 pack
 SELECT subscribe_to_pack(3, 4);
-
--- Check the subscription table
-SELECT * FROM subscription;
+SELECT *
+FROM Subscription
+WHERE user_id = 3;
 -- User 2 subscribed to level 2 access pack, user 3 subscribed to level 3 access pack
 -- ============================
 
@@ -59,16 +80,22 @@ SELECT subscribe_to_pack(2, 4);
 
 -- Check user 2's subscription
 SELECT * FROM subscription WHERE user_id = 2;
+SELECT *
+FROM Subscription
+WHERE user_id = 2;
 -- ============================
 
 -- ============================
 -- 6. Test Unsubscribe Functionality
 -- ============================
 -- This will raise exception
-SELECT unsubscribe(680); 
+SELECT unsubscribe(1); 
 
 -- This will cancel current subscription and automatically subscribe to a default pack
-SELECT unsubscribe(680);
+SELECT unsubscribe(2);
+SELECT *
+FROM Subscription
+WHERE user_id = 2;
 -- ============================
 
 -- ============================
