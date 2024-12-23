@@ -87,23 +87,28 @@ RETURNS VOID AS $$
 DECLARE
     pack_duration duration_enum;
     default_pack_id INT := 1;
-    current_pack_id INT;
+	closest_end_time TIMESTAMP;
 BEGIN
-    -- 1. Check if user is already subscribed to the default pack, if so, raise an exception
-    SELECT pack_id INTO current_pack_id
-    FROM subscription
-    WHERE user_id = NEW_USER_ID
-      AND end_time = 'infinity'::TIMESTAMP;
-    
-    IF current_pack_id = default_pack_id AND NEW_PACK_ID = default_pack_id THEN
+    -- 1. Check if user attempt to subscribe to the default pack, if so, raise an exception
+	
+    IF NEW_PACK_ID = default_pack_id THEN
         RAISE EXCEPTION 'User is already on the default subscription pack.';
     END IF;
 
-    -- 2. Update the current subscription's end_time to NOW() (if the user has an active subscription)
-    UPDATE subscription
-    SET end_time = CURRENT_TIMESTAMP	
-    WHERE user_id = NEW_USER_ID 
-      AND end_time > CURRENT_TIMESTAMP;
+    -- 2. Update the current subscription's end_time to current time 
+	-- (if the user has an active high level subscription)
+	SELECT end_time INTO closest_end_time
+		FROM subscription
+		WHERE (user_id = NEW_USER_ID AND pack_id != default_pack_id)
+		ORDER BY start_time DESC
+	LIMIT 1;
+	
+	IF closest_end_time > CURRENT_TIMESTAMP THEN
+		UPDATE subscription
+		SET end_time = CURRENT_TIMESTAMP	
+		WHERE user_id = NEW_USER_ID 
+		  AND end_time = closest_end_time;
+	END IF;
     
     -- 3. Retrieve the duration of the new subscription pack
     SELECT duration INTO pack_duration
@@ -119,10 +124,8 @@ BEGIN
         CASE 
             WHEN pack_duration = '6' THEN CURRENT_TIMESTAMP + INTERVAL '6 months'
             WHEN pack_duration = '12' THEN CURRENT_TIMESTAMP + INTERVAL '12 months'
-            WHEN pack_duration = 'infinity' THEN 'infinity'::TIMESTAMP
         END
     );
-
 END;
 $$ LANGUAGE plpgsql;
 
@@ -130,27 +133,25 @@ CREATE OR REPLACE FUNCTION unsubscribe(NEW_USER_ID INT)
 RETURNS VOID AS $$
 DECLARE
     default_pack_id INT := 1;
-    current_pack_id INT;
+	closest_end_time TIMESTAMP;
 BEGIN
     -- 1. Check if user is already on the default pack (pack_id = 1), if so, raise an exception
-    SELECT pack_id INTO current_pack_id
-    FROM subscription
-    WHERE user_id = NEW_USER_ID
-      AND end_time = 'infinity'::TIMESTAMP;
+    SELECT end_time INTO closest_end_time
+		FROM subscription
+		WHERE (user_id = NEW_USER_ID AND pack_id != default_pack_id)
+		ORDER BY start_time DESC
+	LIMIT 1;
     
-    IF current_pack_id = default_pack_id THEN
-        RAISE EXCEPTION 'User is already on the default subscription pack and cannot unsubscribe from it.';
+    IF CURRENT_TIMESTAMP > closest_end_time THEN
+        RAISE EXCEPTION 'User does not have any active subscription.';
     END IF;
 
-    -- 2. Update the current subscription's end_time to NOW() (if the user has an active subscription)
+    -- 2. Update the current active subscription's end_time to NOW()
     UPDATE subscription
     SET end_time = CURRENT_TIMESTAMP
     WHERE user_id = NEW_USER_ID
-      AND end_time > CURRENT_TIMESTAMP;
-    
-    -- 3. Insert a new subscription for the default pack (pack_id = 1, end_time = 'infinity')
-    INSERT INTO subscription (user_id, pack_id, start_time, end_time)
-    VALUES (NEW_USER_ID, default_pack_id, CURRENT_TIMESTAMP, 'infinity'::TIMESTAMP);
+      AND end_time > CURRENT_TIMESTAMP
+	  AND pack_id != default_pack_id;
 
 END;
 $$ LANGUAGE plpgsql;
