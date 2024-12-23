@@ -3,7 +3,8 @@ RETURNS TABLE (
     recommended_content_id INTEGER,
     title VARCHAR,
     genre_names VARCHAR, -- Aggregated genres
-    rating DECIMAL(3, 1)
+    rating DECIMAL(3, 1),
+    view_count INTEGER -- Added view_count column
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -11,7 +12,8 @@ BEGIN
         c.content_id AS recommended_content_id,
         c.title,
         STRING_AGG(DISTINCT g.genre_name, ', ')::VARCHAR AS genre_names, -- Cast to VARCHAR
-        c.rating
+        c.rating,
+        COUNT(vh.content_id)::INTEGER AS view_count -- Cast COUNT to INTEGER
     FROM 
         view_history vh
     INNER JOIN content c ON vh.content_id = c.content_id
@@ -33,7 +35,8 @@ RETURNS TABLE (
     recommended_content_id INTEGER,
     title VARCHAR,
     genre_names VARCHAR,  -- Changed column name to show all genres
-    rating DECIMAL(3, 1)
+    rating DECIMAL(3, 1),
+    view_count INTEGER -- Added view count
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -58,13 +61,15 @@ BEGIN
     SELECT 
         c.content_id AS recommended_content_id,
         c.title,
-        STRING_AGG(g2.genre_name, ', ')::VARCHAR AS genre_names, -- Concatenate all genre names
-        c.rating
+        STRING_AGG(DISTINCT g2.genre_name, ', ')::VARCHAR AS genre_names, -- Concatenate all genre names, remove duplicates
+        c.rating,
+        COUNT(DISTINCT vh.user_id)::INTEGER AS view_count -- Cast COUNT to INTEGER
     FROM 
         content c
     INNER JOIN content_genre cg ON c.content_id = cg.content_id
     LEFT JOIN genre g1 ON cg.genre_id = g1.genre_id -- First join for matching user preferred genres
     LEFT JOIN genre g2 ON cg.genre_id = g2.genre_id -- Second join to gather all genres for content
+    LEFT JOIN view_history vh ON c.content_id = vh.content_id -- Join to count views for each content
     WHERE 
         g1.genre_id IN (SELECT genre_id FROM user_genre_preference) -- Match one of the top genres
         AND c.content_id NOT IN (
@@ -73,7 +78,8 @@ BEGIN
     GROUP BY 
         c.content_id, c.title, c.rating -- Group by content to avoid duplicates
     ORDER BY 
-        c.rating DESC, -- Highest-rated content first
+        view_count DESC, -- Most viewed content
+        c.rating DESC, -- Highest-rated content
         c.release_date DESC -- Newer content prioritized
     LIMIT 10;
 END;
@@ -136,13 +142,13 @@ DECLARE
 	closest_end_time TIMESTAMP;
 BEGIN
     -- 1. Check if user is already on the default pack (pack_id = 1), if so, raise an exception
-    SELECT end_time INTO closest_end_time
+    SELECT end_time, pack_id INTO closest_end_time, current_pack_id
 		FROM subscription
-		WHERE (user_id = NEW_USER_ID AND pack_id != default_pack_id)
+		WHERE user_id = NEW_USER_ID
 		ORDER BY start_time DESC
 	LIMIT 1;
     
-    IF CURRENT_TIMESTAMP > closest_end_time THEN
+    IF CURRENT_TIMESTAMP > closest_end_time OR current_pack_id = default_pack_id THEN
         RAISE EXCEPTION 'User does not have any active subscription.';
     END IF;
 

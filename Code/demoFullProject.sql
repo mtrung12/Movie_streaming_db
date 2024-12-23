@@ -9,6 +9,10 @@ WHERE email IN (
     'raj.kumar@example.com'
 );
 
+SELECT * FROM Rate where user_id between 747 and 748;
+SELECT * FROM Favourite_list where user_id between 747 and 748;
+SELECT * FROM Subscription where user_id between 747 and 748;
+
 DELETE FROM Users
 WHERE email IN (
     'sebastian.allen@example.com', 
@@ -23,8 +27,9 @@ WHERE email IN (
     'amelia.taylor@example.com', 
     'raj.kumar@example.com'
 );
-
-S
+SELECT * FROM Rate where user_id between 747 and 748;
+SELECT * FROM Favourite_list where user_id between 747 and 748;
+SELECT * FROM Subscription where user_id between 747 and 748;
 
 -- This should delete the first 2 users along with their corresponding records in rate, subscription, and favourite_list
 -- ============================
@@ -32,6 +37,10 @@ S
 -- ============================
 -- 2. INSERT New Users
 -- ============================
+-- show subscription_table first (no id 1, 2, 3)
+SELECT * FROM subscription
+WHERE user_id BETWEEN 1 AND 3;
+
 INSERT INTO Users (first_name, last_name, email, password, country_id) 
 VALUES 
     ('Sebastian', 'Allen', 'sebastian.allen@example.com', 'Password@123', 1),
@@ -52,8 +61,12 @@ WHERE user_id BETWEEN 1 AND 3;
 -- ============================
 -- 4. Demo for Subscribing Functionalities
 -- ============================
+-- Show subscription_pack table
+SELECT * FROM subscription
+WHERE user_id BETWEEN 1 AND 3;
+
 -- Attempt to subscribe a user to the same level pack
-SELECT subscribe_to_pack(1, 1);  -- Should raise exception (user at level 1 cannot subscribe to level 1 again)
+SELECT subscribe_to_pack(1, 1);  -- Should raise exception (user cannot subscribe to default pack)
 
 -- Subscribe user 2 to level 2 pack
 SELECT subscribe_to_pack(2, 2);
@@ -61,7 +74,7 @@ SELECT *
 FROM Subscription
 WHERE user_id = 2;
 
--- Subscribe user 3 to level 4 pack
+-- Subscribe user 3 to level 3 pack
 SELECT subscribe_to_pack(3, 4);
 SELECT *
 FROM Subscription
@@ -77,6 +90,9 @@ SELECT subscribe_to_pack(2, 3);  -- Overlapping subscription for user 2
 
 -- This will cancel current subscription and subscribe to a new pack
 SELECT subscribe_to_pack(2, 4);
+SELECT *
+FROM Subscription
+WHERE user_id = 2;
 
 -- Check user 2's subscription
 SELECT * FROM subscription WHERE user_id = 2;
@@ -91,11 +107,20 @@ WHERE user_id = 2;
 -- This will raise exception
 SELECT unsubscribe(1); 
 
+-- View before unsubscribe
+SELECT *
+FROM Subscription
+WHERE user_id = 2;
 -- This will cancel current subscription and automatically subscribe to a default pack
 SELECT unsubscribe(2);
 SELECT *
 FROM Subscription
 WHERE user_id = 2;
+
+-- After unsubscribed, cannot unsub again if have not sub to a higher level pack
+SELECT unsubscribe(2);
+
+SELECT subscribe_to_pack(2, 3);
 -- ============================
 
 -- ============================
@@ -103,6 +128,8 @@ WHERE user_id = 2;
 -- ============================
 -- Access level 1, 2, 3 for content IDs 111, 112, 116
 -- Current access levels for user_id 1, 2, 3 are (1, 2, 2)
+SELECT * FROM content
+WHERE content_id IN (111, 112, 116);
 
 -- This will raise an exception (access level conflict)
 INSERT INTO View_history
@@ -111,19 +138,44 @@ VALUES(1, 112, 1, CURRENT_TIMESTAMP, '00:00:01', FALSE);
 -- These will NOT raise an exception
 INSERT INTO View_history
 VALUES(1, 111, 1, CURRENT_TIMESTAMP, '00:00:01', FALSE);
+SELECT * FROM view_history WHERE user_id = 1;
 
 INSERT INTO View_history
 VALUES(2, 112, 1, CURRENT_TIMESTAMP, '00:10:00', TRUE);
+SELECT * FROM view_history WHERE user_id = 2;
+
+-- Try to unsubscribe then watch level 2 content
+SELECT * FROM subscription 
+WHERE user_id = 2
+ORDER BY start_time DESC;
+
+SELECT unsubscribe(2);
+
+INSERT INTO View_history
+VALUES(2, 112, 1, CURRENT_TIMESTAMP, '00:20:00', TRUE);
+
 -- ============================
 
 -- ============================
 -- 8. Check Trigger for Managing Ratings
 -- ============================
 -- This will raise exception because user ID 1 hasn't finished content 111
+SELECT * 
+FROM view_history WHERE user_id = 1;
+
 INSERT INTO rate
 VALUES(111, 1, CURRENT_TIMESTAMP, 4);
 
 -- This will NOT raise exception because user ID 2 has finished content 112
+SELECT * FROM content WHERE content_id = 112;
+
+SELECT * 
+FROM view_history 
+WHERE user_id = 2 AND content_id = 112;
+
+-- Check the content before inserting rating
+SELECT * FROM content WHERE content_id = 112;
+
 INSERT INTO rate
 VALUES(112, 2, CURRENT_TIMESTAMP, 4);
 
@@ -133,15 +185,20 @@ SELECT * FROM content WHERE content_id = 112;
 -- Check Trigger: Delete old rating
 -- This will update the rating
 INSERT INTO rate
-VALUES(112, 2, CURRENT_TIMESTAMP, 3.0);
+VALUES(112, 2, CURRENT_TIMESTAMP, 5.0);
 
 -- Check content rating after update
+SELECT * FROM rate WHERE content_id = 112;
 SELECT * FROM content WHERE content_id = 112;
 -- ============================
 
 -- ============================
--- 9. Insert View History and Update Ratings
+-- 9. Update Ratings
 -- ============================
+SELECT * FROM view_history WHERE user_id = 700;
+SELECT * FROM subscription WHERE user_id = 700;
+
+-- add another view and rating
 INSERT INTO View_history
 VALUES(700, 112, 1, CURRENT_TIMESTAMP, '00:10:00', TRUE);
 
@@ -195,3 +252,10 @@ SELECT * FROM recommend_content_by_location(680);
 -- 11. Search content by keyword function
 -- ============================
 SELECT * FROM search_content_by_keyword('the');
+
+-- ============================
+-- 12. Search content by keyword function
+-- ============================
+-- test these 2 functions on mass database
+SELECT * FROM recommend_content_by_genre(130003);
+SELECT * FROM recommend_content_by_location(130003);
