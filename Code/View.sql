@@ -117,7 +117,8 @@ WHERE
 GROUP BY 
     c.content_id
 ORDER BY 
-    c.rating DESC;
+    c.rating DESC
+limit 10;
 
 select * from UserSubscriptionHistory
 select * from UserFavoriteList
